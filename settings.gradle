@@ -1,0 +1,2 @@
+//include ':type-safe-adapter'
+rootProject.name = 'type-safe-adapter'
