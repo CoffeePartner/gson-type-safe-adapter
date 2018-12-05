@@ -18,7 +18,7 @@ buildscript {
 
 group = "com.dieyidezui.gson"
 //name = "type-safe-adapter"
-version = "1.0.0"
+version = "1.0.1"
 
 
 apply plugin: 'java'

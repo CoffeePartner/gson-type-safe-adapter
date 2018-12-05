@@ -1,6 +1,7 @@
 package com.dieyidezui.gson.adapter;
 
 import com.google.gson.*;
+import com.google.gson.internal.$Gson$Types;
 import com.google.gson.internal.ConstructorConstructor;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
@@ -8,6 +9,8 @@ import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Collections;
@@ -20,6 +23,7 @@ import java.util.Map;
  * 2. String
  * 3. Collection
  * 4. Map
+ * 5. Array
  * <p>
  * Character is a little bit different from gson's default policy,
  * it will take string's first char as result instead of throw.
@@ -79,6 +83,7 @@ public class TypeSafeAdapterFactory implements TypeAdapterFactory {
     @Override
     public <T> TypeAdapter<T> create(Gson gson, TypeToken<T> type) {
         Class<?> raw = type.getRawType();
+        Type generalType = type.getType();
         Number placeHolder;
         if (raw == String.class) {
             return (TypeAdapter<T>) new SafeStringAdapter(gson.getDelegateAdapter(this, type));
@@ -94,6 +99,8 @@ public class TypeSafeAdapterFactory implements TypeAdapterFactory {
             return (TypeAdapter<T>) new SafeCharAdapter(
                     gson.getDelegateAdapter(this, type),
                     gson.getAdapter(String.class));
+        } else if (generalType instanceof GenericArrayType || generalType instanceof Class && ((Class<?>) generalType).isArray()) {
+            return (TypeAdapter<T>) new SafeArrayAdapter(gson.getDelegateAdapter(this, type), $Gson$Types.getRawType($Gson$Types.getArrayComponentType(generalType)));
         }
         return null;
     }
@@ -195,16 +202,12 @@ public class TypeSafeAdapterFactory implements TypeAdapterFactory {
 
         @Override
         public Collection<E> read(JsonReader in) throws IOException {
-            Collection<E> collection = null;
             if (in.peek() == JsonToken.BEGIN_ARRAY) {
-                collection = super.read(in);
+                return super.read(in);
             } else {
                 in.skipValue();
+                return supplier.get();
             }
-            if (collection == null) {
-                collection = supplier.get();
-            }
-            return collection;
         }
     }
 
@@ -271,6 +274,26 @@ public class TypeSafeAdapterFactory implements TypeAdapterFactory {
                 return str.charAt(0);
             }
             return (char) 0;
+        }
+    }
+
+    static class SafeArrayAdapter extends ForwardingAdapter<Object> {
+
+        private final Class<?> componentType;
+
+        SafeArrayAdapter(TypeAdapter<?> delegate, Class<?> componentType) {
+            super(delegate);
+            this.componentType = componentType;
+        }
+
+        @Override
+        public Object read(JsonReader in) throws IOException {
+            if (in.peek() == JsonToken.BEGIN_ARRAY) {
+                return super.read(in);
+            } else {
+                in.skipValue();
+                return Array.newInstance(componentType, 0);
+            }
         }
     }
 

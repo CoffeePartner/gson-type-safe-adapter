@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 public class TypeSafeTest {
 
@@ -181,6 +182,22 @@ public class TypeSafeTest {
         tester.assertIt("map", "\"null\"", empty);
     }
 
+    @Test
+    public void testArray() {
+        Object[] empty1 = new Object[0];
+        Object[][] empty2 = new Object[0][0];
+        tester.assertArrayEquals("ar", "null", empty2);
+        tester.assertArrayEquals("ar", "'null'", empty2);
+        tester.assertArrayEquals("ar", "\"null\"", empty2);
+        tester.assertArrayEquals("ar", "true", empty2);
+        tester.assertArrayEquals("ar", "1", empty2);
+        tester.assertArrayEquals("ar", "2.0", empty2);
+        tester.assertArrayEquals("ar", "{}", empty2);
+        tester.assertArrayEquals("ar", "[]", empty2);
+        tester.assertArrayEquals("ar", "[1, 2, 3]", new Object[]{empty1, empty1, empty1});
+        tester.assertArrayEquals("ar", "[[1], 2, 3]", new Object[]{new Object[]{1.0}, empty1, empty1});
+    }
+
 
     private static class TypedTester {
         private final Gson safe = new GsonBuilder()
@@ -188,9 +205,28 @@ public class TypeSafeTest {
                 .create();
 
         void assertIt(String name, Object input, Object expect) {
+            assertThat(name, input, expect, new BiConsumer() {
+                @Override
+                public void accept(Object o, Object o2) {
+                    Assert.assertEquals(o, o2);
+                }
+            });
+        }
+
+        void assertArrayEquals(String name, Object input, Object expect) {
+            assertThat(name, input, expect, new BiConsumer() {
+
+                @Override
+                public void accept(Object o, Object o2) {
+                    Assert.assertArrayEquals((Object[]) o, (Object[]) o2);
+                }
+            });
+        }
+
+        void assertThat(String name, Object input, Object expect, BiConsumer consumer) {
             TestBean bean = safe.fromJson("{'" + name + "' : " + input + "}", TestBean.class);
             try {
-                Assert.assertEquals(expect, TestBean.class.getDeclaredField(name)
+                consumer.accept(expect, TestBean.class.getDeclaredField(name)
                         .get(bean));
             } catch (Exception e) {
                 throw new AssertionError();
@@ -211,6 +247,7 @@ public class TypeSafeTest {
         String str;
         List list;
         Map map;
+        Object[][] ar;
 
         @Override
         public String toString() {
@@ -226,6 +263,7 @@ public class TypeSafeTest {
                     ", str='" + str + '\'' +
                     ", list=" + list +
                     ", map=" + map +
+                    ", ar=" + Arrays.deepToString(ar) +
                     '}';
         }
     }

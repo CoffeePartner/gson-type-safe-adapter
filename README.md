@@ -23,6 +23,7 @@ It doesn't change the Gson original code, just append a TypeAdapterFactory.
 | char / Character | (char)0 |
 | Collection | [] |
 | Map | {} |
+| Array / GenericArray | [] |
 
 
 More details: see [TypeSafeTest](src/test/java/com/dieyidezui/gson/adapter/TypeSafeTest.java)
@@ -32,7 +33,7 @@ More details: see [TypeSafeTest](src/test/java/com/dieyidezui/gson/adapter/TypeS
 ### Step 1
 
 ```groovy
-implementation 'com.dieyidezui.gson:safe-type-adapter:1.0.0'
+implementation 'com.dieyidezui.gson:safe-type-adapter:1.0.1'
 ```
 
 ### Step 2
