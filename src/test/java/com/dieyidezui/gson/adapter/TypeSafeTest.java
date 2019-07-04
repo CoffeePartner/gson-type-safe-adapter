@@ -3,6 +3,7 @@ package com.dieyidezui.gson.adapter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -15,6 +16,16 @@ import java.util.function.BiConsumer;
 public class TypeSafeTest {
 
     private static TypedTester tester = new TypedTester();
+
+    @Test
+    public void testObject() {
+        tester.assertIt("obj", "\"\"", null);
+        tester.assertIt("obj", "{}", new Person());
+        tester.assertIt("obj", "[]", null);
+        tester.assertIt("obj", "null", null);
+        tester.assertIt("obj", "1", null);
+        tester.assertIt("obj", 21321321321321213L, null);
+    }
 
     @Test
     public void testByte() {
@@ -200,9 +211,14 @@ public class TypeSafeTest {
 
 
     private static class TypedTester {
-        private final Gson safe = new GsonBuilder()
-                .registerTypeAdapterFactory(TypeSafeAdapterFactory.newInstance())
-                .create();
+        private final Gson safe = initGson();
+
+        private Gson initGson() {
+            GsonBuilder gsonBuilder = new GsonBuilder();
+            return gsonBuilder
+                    .registerTypeAdapterFactory(TypeSafeAdapterFactory.newInstance())
+                    .create();
+        }
 
         void assertIt(String name, Object input, Object expect) {
             assertThat(name, input, expect, new BiConsumer() {
@@ -248,6 +264,7 @@ public class TypeSafeTest {
         List list;
         Map map;
         Object[][] ar;
+        Person obj;
 
         @Override
         public String toString() {
@@ -264,7 +281,16 @@ public class TypeSafeTest {
                     ", list=" + list +
                     ", map=" + map +
                     ", ar=" + Arrays.deepToString(ar) +
+                    ", obj=" + ((obj == null) ? "null" : "{}") +
                     '}';
+        }
+    }
+
+    static class Person {
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof Person;
         }
     }
 }
